@@ -1,20 +1,30 @@
+extern crate arraydeque;
+
 use std::io;
+use std::io::Write;
 
 mod chunk;
 mod common;
 mod value;
+mod vm;
 
 use chunk::Chunk;
 use common::*;
+use vm::VM;
 
 fn main() {
     let mut stdout = io::stdout();
     let mut chunk = Chunk::new();
 
-    chunk.write(OP_CONSTANT, 123);
-    let offset = chunk.add_constant(1.2);
-    chunk.write(offset as u8, 123);
-    chunk.write(OP_RETURN as u8, 123);
+    chunk.write_constant(1.2, 123);
+    chunk.write(OP_NEGATE, 123);
+    chunk.write_constant(1.8, 123);
+    chunk.write(OP_SUBTRACT, 124);
+    chunk.write(OP_RETURN, 123);
 
-    chunk.disassemble(&mut stdout);
+    let mut vm = VM::new(chunk, stdout);
+    vm.disassemble();
+    vm.interpret();
+
+    // chunk.disassemble(&mut stdout);
 }

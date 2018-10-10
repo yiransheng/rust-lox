@@ -1,4 +1,14 @@
 [[package]]
+name = "arraydeque"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "loxvm"
 version = "0.1.0"
+dependencies = [
+ "arraydeque 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
+[metadata]
+"checksum arraydeque 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e300327073b806ffc81fccb228b2d4131ac7ef1b1a015f7b0c399c7f886cacc6"

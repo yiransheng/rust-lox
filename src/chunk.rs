@@ -1,3 +1,5 @@
+extern crate arraydeque;
+
 use std::io::Write;
 
 use common::*;
@@ -21,7 +23,19 @@ impl Chunk {
         self.code.push(byte);
         self.lines.push(line);
     }
-    pub fn add_constant(&mut self, value: Value) -> usize {
+    pub fn write_constant(&mut self, constant: Value, line: u64) {
+        self.write(OP_CONSTANT, line);
+        let constant_offset = self.add_constant(constant);
+        self.write(constant_offset as u8, line);
+    }
+    pub fn read_byte(&self, offset: usize) -> u8 {
+        self.code[offset]
+    }
+    pub fn read_constant(&self, offset: usize) -> Value {
+        let constant_offset = self.read_byte(offset);
+        self.constants[constant_offset as usize]
+    }
+    fn add_constant(&mut self, value: Value) -> usize {
         self.constants.push(value);
         self.constants.len() - 1
     }
@@ -48,6 +62,11 @@ impl Chunk {
         match instr {
             OP_RETURN => Self::disassemble_simple_instruction("OP_RETURN", offset, write_to),
             OP_CONSTANT => self.disassemble_constant_instruct("OP_CONSTANT", offset, write_to),
+            OP_NEGATE => Self::disassemble_simple_instruction("OP_NEGATE", offset, write_to),
+            OP_ADD => Self::disassemble_simple_instruction("OP_ADD", offset, write_to),
+            OP_SUBTRACT => Self::disassemble_simple_instruction("OP_SUBTRACT", offset, write_to),
+            OP_MULTIPLY => Self::disassemble_simple_instruction("OP_MULTIPLY", offset, write_to),
+            OP_DIVIDE => Self::disassemble_simple_instruction("OP_DIVIDE", offset, write_to),
             _ => {
                 write!(write_to, "Unknown OptCode {}", instr);
                 offset + 1
