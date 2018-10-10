@@ -18,9 +18,9 @@ fn main() {
 
     chunk.write_constant(1.2, 123);
     chunk.write(OP_NEGATE, 123);
-    chunk.write_constant(1.8, 123);
+    chunk.write_constant(1.8, 124);
     chunk.write(OP_SUBTRACT, 124);
-    chunk.write(OP_RETURN, 123);
+    chunk.write(OP_RETURN, 125);
 
     let mut vm = VM::new(chunk, stdout);
     vm.disassemble();

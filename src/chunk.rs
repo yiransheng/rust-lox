@@ -5,10 +5,59 @@ use std::io::Write;
 use common::*;
 use value::Value;
 
+#[derive(Copy, Clone, Debug)]
+struct Line {
+    line_no: u64,
+    repeat: usize,
+}
+#[derive(Debug)]
+struct Lines {
+    lines: Vec<Line>,
+}
+
+impl Lines {
+    fn new() -> Self {
+        Lines { lines: Vec::new() }
+    }
+    fn push_line(&mut self, line_no: u64) {
+        let mut line = self
+            .lines
+            .pop()
+            .unwrap_or_else(|| Line { line_no, repeat: 0 });
+
+        if line_no == line.line_no {
+            line.repeat += 1;
+            self.lines.push(line);
+        } else {
+            self.lines.push(line);
+            self.lines.push(Line { line_no, repeat: 1 });
+        }
+    }
+    // TODO: binary search
+    fn find_line_no(&self, offset: usize) -> u64 {
+        let line_acc = Line {
+            line_no: 0,
+            repeat: 0,
+        };
+
+        self.lines
+            .iter()
+            .scan(line_acc, |acc, ref line| {
+                acc.line_no = line.line_no;
+                acc.repeat = acc.repeat + line.repeat;
+
+                Some(acc.clone())
+            }).skip_while(|line_acc| line_acc.repeat < offset + 1)
+            .map(|line_acc| line_acc.line_no)
+            .next()
+            .unwrap()
+    }
+}
+
 pub struct Chunk {
     code: Vec<u8>,
     constants: Vec<Value>,
-    lines: Vec<u64>,
+    lines: Lines,
 }
 
 impl Chunk {
@@ -16,12 +65,12 @@ impl Chunk {
         Chunk {
             code: Vec::new(),
             constants: Vec::new(),
-            lines: Vec::new(),
+            lines: Lines::new(),
         }
     }
     pub fn write(&mut self, byte: u8, line: u64) {
         self.code.push(byte);
-        self.lines.push(line);
+        self.lines.push_line(line);
     }
     pub fn write_constant(&mut self, constant: Value, line: u64) {
         self.write(OP_CONSTANT, line);
@@ -51,10 +100,16 @@ impl Chunk {
         }
     }
     fn disassemble_instruction<W: Write>(&self, offset: usize, write_to: &mut W) -> usize {
-        if offset > 0 && self.lines[offset] == self.lines[offset - 1] {
+        let prev_line_no = if offset > 0 {
+            self.lines.find_line_no(offset - 1)
+        } else {
+            0
+        };
+        let line_no = self.lines.find_line_no(offset);
+        if offset > 0 && line_no == prev_line_no {
             write!(write_to, "   | ");
         } else {
-            write!(write_to, "{:04} ", self.lines[offset]);
+            write!(write_to, "{:04} ", line_no);
         }
 
         let instr = self.code[offset];
