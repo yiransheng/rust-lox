@@ -6,7 +6,7 @@ use std::io::Write;
 
 mod chunk;
 mod common;
-mod keyword;
+mod scanner;
 mod value;
 mod vm;
 
