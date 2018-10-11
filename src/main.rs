@@ -1,10 +1,12 @@
 extern crate arraydeque;
+extern crate num;
 
 use std::io;
 use std::io::Write;
 
 mod chunk;
 mod common;
+mod keyword;
 mod value;
 mod vm;
 

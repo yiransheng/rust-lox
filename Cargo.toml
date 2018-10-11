@@ -4,4 +4,7 @@ version = "0.1.0"
 authors = ["Yiran Sheng <shengyiran@gmail.com>"]
 
 [dependencies]
+num = "0.2.0"
+num-derive = "0.2"
+num-traits = "0.2"
 arraydeque = "0.4.3"
