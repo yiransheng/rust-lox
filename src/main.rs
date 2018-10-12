@@ -12,6 +12,8 @@ mod vm;
 
 use chunk::Chunk;
 use common::*;
+use scanner::Scanner;
+use scanner::TokenType;
 use vm::VM;
 
 fn main() {
@@ -28,5 +30,19 @@ fn main() {
     vm.disassemble();
     vm.interpret();
 
-    // chunk.disassemble(&mut stdout);
+    let s = "if (x == 1.229 while ) { 
+        for return variable 
+    } else { 
+        class return \"abcde\" ;
+        super;
+    }";
+    let mut scanner = Scanner::new(s);
+
+    loop {
+        let t = scanner.scan_token();
+        println!("{:?}", t);
+        if t.ty == TokenType::TOKEN_EOF {
+            break;
+        }
+    }
 }
