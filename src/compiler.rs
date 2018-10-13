@@ -4,11 +4,13 @@ use scanner::{Scanner, Token, TokenType};
 use std::mem;
 use value::Value;
 
+#[derive(Debug)]
 pub struct CompileError {
     pub line_no: u64,
     pub payload: CompileErrorPayload,
     pub message: Option<String>,
 }
+#[derive(Debug)]
 pub enum CompileErrorPayload {
     ScannerError,
     ParserError,

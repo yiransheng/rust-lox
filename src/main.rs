@@ -33,10 +33,14 @@ fn main() {
     // vm.interpret();
 
     let s = "-12 * 33 - (4 + 6)";
+    let result = compile(s, &mut chunk);
 
-    if let Ok(_) = compile(s, &mut chunk) {
-        let mut vm = VM::new(chunk, stdout);
-        vm.disassemble();
-        vm.interpret();
+    match result {
+        Ok(_) => {
+            let mut vm = VM::new(chunk, stdout);
+            vm.disassemble();
+            vm.interpret();
+        }
+        Err(e) => println!("{:?}", e),
     }
 }
