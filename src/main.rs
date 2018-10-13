@@ -32,7 +32,7 @@ fn main() {
     // vm.disassemble();
     // vm.interpret();
 
-    let s = "-12 + 4 * 5";
+    let s = "-12 / 9";
 
     if let Ok(_) = compile(s, &mut chunk) {
         let mut vm = VM::new(chunk, stdout);

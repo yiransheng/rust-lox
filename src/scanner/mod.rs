@@ -97,7 +97,10 @@ impl<'a> Scanner<'a> {
                     self.line += 1;
                     self.advance();
                 }
-                Some('/') => self.skip_line_comment(),
+                Some('/') => {
+                    self.skip_line_comment();
+                    return;
+                }
                 Some(c) => {
                     if c.is_whitespace() {
                         self.advance();
