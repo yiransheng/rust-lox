@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::io::Write;
 use std::ops::Deref;
 use std::result;
@@ -21,6 +22,7 @@ pub struct VM<'a, W> {
     chunk: &'a Chunk,
     ip: usize,
     stack: ArrayDeque<[ValueRef<'a>; 256]>,
+    globals: HashMap<&'a str, ValueRef<'a>>,
     output: W,
 }
 impl<'a, W> VM<'a, W> {
@@ -29,6 +31,7 @@ impl<'a, W> VM<'a, W> {
             chunk,
             output,
             ip: 0,
+            globals: HashMap::new(),
             stack: ArrayDeque::new(),
         }
     }
@@ -61,6 +64,33 @@ impl<'a, W: Write> VM<'a, W> {
                 OP_CONSTANT => {
                     let constant = self.read_constant();
                     self.push_value(constant);
+                }
+                OP_POP => {
+                    let _ = self.pop_value().ok_or(InterpretError::RuntimeError)?;
+                }
+                OP_GET_GLOBAL => {
+                    let name = self.read_string().ok_or(InterpretError::RuntimeError)?;
+                    let mut value;
+                    {
+                        let v = self.globals.get(name).ok_or(InterpretError::RuntimeError)?;
+                        value = v.clone();
+                    }
+                    self.push_value(value);
+                }
+                OP_DEFINE_GLOBAL => {
+                    let name = self.read_string().ok_or(InterpretError::RuntimeError)?;
+                    let value = self.peek(0).ok_or(InterpretError::RuntimeError)?;
+
+                    self.globals.insert(name, value);
+                    let _ = self.pop_value().ok_or(InterpretError::RuntimeError)?;
+                }
+                OP_SET_GLOBAL => {
+                    let name = self.read_string().ok_or(InterpretError::RuntimeError)?;
+                    let value = self.peek(0).ok_or(InterpretError::RuntimeError)?;
+                    // is new key
+                    if self.globals.insert(name, value).is_none() {
+                        return Err(InterpretError::RuntimeError);
+                    }
                 }
                 OP_NEGATE => {
                     let value = self.pop_value().ok_or(InterpretError::RuntimeError)?;
@@ -166,6 +196,16 @@ impl<'a, W: Write> VM<'a, W> {
         self.ip += 1;
 
         constant
+    }
+    fn read_string(&mut self) -> Option<&'a str> {
+        let value: ValueRef<'a> = self.read_constant();
+        match value {
+            Value::Object(Cow::Borrowed(o)) => match o {
+                Obj::String(o) => Some((&**o).deref()),
+                _ => None,
+            },
+            _ => None,
+        }
     }
 
     fn push_value(&mut self, v: ValueRef<'a>) {

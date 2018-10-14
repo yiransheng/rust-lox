@@ -13,3 +13,8 @@ pub const OP_DIVIDE: u8 = 0x0a;
 pub const OP_EQUAL: u8 = 0x0b;
 pub const OP_GREATER: u8 = 0x0c;
 pub const OP_LESS: u8 = 0x0d;
+
+pub const OP_POP: u8 = 0x0e;
+pub const OP_GET_GLOBAL: u8 = 0x0f;
+pub const OP_DEFINE_GLOBAL: u8 = 0x10;
+pub const OP_SET_GLOBAL: u8 = 0x11;
