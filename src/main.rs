@@ -32,7 +32,7 @@ fn main() {
     // vm.disassemble();
     // vm.interpret();
 
-    let s = "-12 * 33 - (4 + 6)";
+    let s = "!(5 - 4 > 3 * 2 == !nil)";
     let result = compile(s, &mut chunk);
 
     match result {

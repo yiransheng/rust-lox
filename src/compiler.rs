@@ -122,6 +122,24 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
             TokenType::TOKEN_SLASH => {
                 self.emit_byte(OP_DIVIDE);
             }
+            TokenType::TOKEN_BANG_EQUAL => {
+                self.emit_bytes(OP_EQUAL, OP_NOT);
+            }
+            TokenType::TOKEN_EQUAL_EQUAL => {
+                self.emit_byte(OP_EQUAL);
+            }
+            TokenType::TOKEN_GREATER => {
+                self.emit_byte(OP_GREATER);
+            }
+            TokenType::TOKEN_GREATER_EQUAL => {
+                self.emit_bytes(OP_LESS, OP_NOT);
+            }
+            TokenType::TOKEN_LESS => {
+                self.emit_byte(OP_LESS);
+            }
+            TokenType::TOKEN_LESS_EQUAL => {
+                self.emit_bytes(OP_GREATER, OP_NOT);
+            }
             _ => unreachable!(),
         }
 
@@ -135,6 +153,10 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
         match op_type {
             TokenType::TOKEN_MINUS => {
                 self.emit_byte(OP_NEGATE);
+                Ok(())
+            }
+            TokenType::TOKEN_BANG => {
+                self.emit_byte(OP_NOT);
                 Ok(())
             }
             _ => unreachable!(),
@@ -159,15 +181,32 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
 
         Ok(())
     }
+    fn literal(&mut self) -> Result<()> {
+        match self.previous.ty {
+            TokenType::TOKEN_FALSE => {
+                self.emit_byte(OP_FALSE);
+                Ok(())
+            }
+            TokenType::TOKEN_TRUE => {
+                self.emit_byte(OP_TRUE);
+                Ok(())
+            }
+            TokenType::TOKEN_NIL => {
+                self.emit_byte(OP_NIL);
+                Ok(())
+            }
+            _ => Err(self.error("Unknown Literal")),
+        }
+    }
 
     fn number(&mut self) -> Result<()> {
-        let val: Value = self
+        let val: f64 = self
             .previous
             .raw
             .parse()
             .expect("Not a number, scanner bugged out");
 
-        self.emit_constant(val);
+        self.emit_constant(Value::from(val));
         Ok(())
     }
 
@@ -298,13 +337,13 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
                 precedence: PREC_FACTOR,
             },
             TokenType::TOKEN_BANG => ParseRule {
-                prefix: None,
+                prefix: Some(Parser::unary),
                 infix: None,
                 precedence: PREC_NONE,
             },
             TokenType::TOKEN_BANG_EQUAL => ParseRule {
                 prefix: None,
-                infix: None,
+                infix: Some(Parser::binary),
                 precedence: PREC_EQUALITY,
             },
             TokenType::TOKEN_EQUAL => ParseRule {
@@ -314,27 +353,27 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
             },
             TokenType::TOKEN_EQUAL_EQUAL => ParseRule {
                 prefix: None,
-                infix: None,
+                infix: Some(Parser::binary),
                 precedence: PREC_EQUALITY,
             },
             TokenType::TOKEN_GREATER => ParseRule {
                 prefix: None,
-                infix: None,
+                infix: Some(Parser::binary),
                 precedence: PREC_COMPARISON,
             },
             TokenType::TOKEN_GREATER_EQUAL => ParseRule {
                 prefix: None,
-                infix: None,
+                infix: Some(Parser::binary),
                 precedence: PREC_COMPARISON,
             },
             TokenType::TOKEN_LESS => ParseRule {
                 prefix: None,
-                infix: None,
+                infix: Some(Parser::binary),
                 precedence: PREC_COMPARISON,
             },
             TokenType::TOKEN_LESS_EQUAL => ParseRule {
                 prefix: None,
-                infix: None,
+                infix: Some(Parser::binary),
                 precedence: PREC_COMPARISON,
             },
             TokenType::TOKEN_IDENTIFIER => ParseRule {
@@ -368,7 +407,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
                 precedence: PREC_NONE,
             },
             TokenType::TOKEN_FALSE => ParseRule {
-                prefix: None,
+                prefix: Some(Parser::literal),
                 infix: None,
                 precedence: PREC_NONE,
             },
@@ -388,7 +427,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
                 precedence: PREC_NONE,
             },
             TokenType::TOKEN_NIL => ParseRule {
-                prefix: None,
+                prefix: Some(Parser::literal),
                 infix: None,
                 precedence: PREC_NONE,
             },
@@ -418,7 +457,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
                 precedence: PREC_NONE,
             },
             TokenType::TOKEN_TRUE => ParseRule {
-                prefix: None,
+                prefix: Some(Parser::literal),
                 infix: None,
                 precedence: PREC_NONE,
             },

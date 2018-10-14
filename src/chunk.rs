@@ -116,12 +116,19 @@ impl Chunk {
 
         match instr {
             OP_RETURN => Self::disassemble_simple_instruction("OP_RETURN", offset, write_to),
+            OP_NIL => Self::disassemble_simple_instruction("OP_NIL", offset, write_to),
+            OP_TRUE => Self::disassemble_simple_instruction("OP_TRUE", offset, write_to),
+            OP_FALSE => Self::disassemble_simple_instruction("OP_FALSE", offset, write_to),
             OP_CONSTANT => self.disassemble_constant_instruct("OP_CONSTANT", offset, write_to),
             OP_NEGATE => Self::disassemble_simple_instruction("OP_NEGATE", offset, write_to),
             OP_ADD => Self::disassemble_simple_instruction("OP_ADD", offset, write_to),
             OP_SUBTRACT => Self::disassemble_simple_instruction("OP_SUBTRACT", offset, write_to),
             OP_MULTIPLY => Self::disassemble_simple_instruction("OP_MULTIPLY", offset, write_to),
             OP_DIVIDE => Self::disassemble_simple_instruction("OP_DIVIDE", offset, write_to),
+            OP_NOT => Self::disassemble_simple_instruction("OP_NOT", offset, write_to),
+            OP_EQUAL => Self::disassemble_simple_instruction("OP_EQUAL", offset, write_to),
+            OP_GREATER => Self::disassemble_simple_instruction("OP_GREATER", offset, write_to),
+            OP_LESS => Self::disassemble_simple_instruction("OP_LESS", offset, write_to),
             _ => {
                 write!(write_to, "Unknown OptCode {}", instr);
                 offset + 1

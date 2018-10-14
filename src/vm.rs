@@ -46,13 +46,56 @@ impl<W: Write> VM<W> {
                     self.pop_value().map(|v| self.print_value(v));
                     return Ok(());
                 }
+                OP_NIL => {
+                    self.push_value(Value::Nil);
+                }
+                OP_TRUE => {
+                    self.push_value(Value::from(true));
+                }
+                OP_FALSE => {
+                    self.push_value(Value::from(false));
+                }
                 OP_CONSTANT => {
                     let constant = self.read_constant();
                     self.push_value(constant);
                 }
                 OP_NEGATE => {
-                    if let Some(value) = self.pop_value() {
-                        self.push_value(-value);
+                    let value = self.pop_value().ok_or(InterpretError::RuntimeError)?;
+                    let neg_value = (-value).ok_or(InterpretError::RuntimeError)?;
+                    self.push_value(neg_value);
+                }
+                OP_NOT => {
+                    let value = self.pop_value().ok_or(InterpretError::RuntimeError)?;
+                    let value = Value::from(value.is_falsy());
+                    self.push_value(value);
+                }
+                OP_EQUAL => {
+                    if let Some(value) = self.binary_op(|a, b| Some(Value::from(a == b))) {
+                        self.push_value(value);
+                    } else {
+                        return Err(InterpretError::RuntimeError);
+                    }
+                }
+                OP_GREATER => {
+                    if let Some(value) = self.binary_op(|a, b| {
+                        let a = a.into_number()?;
+                        let b = b.into_number()?;
+
+                        Some(Value::from(a > b))
+                    }) {
+                        self.push_value(value);
+                    } else {
+                        return Err(InterpretError::RuntimeError);
+                    }
+                }
+                OP_LESS => {
+                    if let Some(value) = self.binary_op(|a, b| {
+                        let a = a.into_number()?;
+                        let b = b.into_number()?;
+
+                        Some(Value::from(a < b))
+                    }) {
+                        self.push_value(value);
                     } else {
                         return Err(InterpretError::RuntimeError);
                     }
@@ -112,15 +155,21 @@ impl<W: Write> VM<W> {
     fn pop_value(&mut self) -> Option<Value> {
         self.stack.pop_back()
     }
+    fn peek(&self, distance: usize) -> Option<&Value> {
+        let n = self.stack.len();
+        let index = n - 1 - distance;
+
+        self.stack.get(index)
+    }
 
     fn print_value(&mut self, v: Value) {
         write!(self.output, "{}\n", v);
     }
 
-    fn binary_op<F: Fn(Value, Value) -> Value>(&mut self, f: F) -> Option<Value> {
+    fn binary_op<F: Fn(Value, Value) -> Option<Value>>(&mut self, f: F) -> Option<Value> {
         let a = self.pop_value()?;
         let b = self.pop_value()?;
 
-        Some(f(b, a))
+        f(b, a)
     }
 }
