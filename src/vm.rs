@@ -1,11 +1,14 @@
+use std::borrow::Cow;
 use std::io::Write;
+use std::ops::Deref;
 use std::result;
 
 use arraydeque::ArrayDeque;
 
 use chunk::Chunk;
 use common::*;
-use value::Value;
+use object::{Obj, ObjString};
+use value::{Value, ValueRef};
 
 pub enum InterpretError {
     CompileError,
@@ -14,14 +17,14 @@ pub enum InterpretError {
 
 pub type Result<T> = result::Result<T, InterpretError>;
 
-pub struct VM<W> {
-    chunk: Chunk,
+pub struct VM<'a, W> {
+    chunk: &'a Chunk,
     ip: usize,
-    stack: ArrayDeque<[Value; 256]>,
+    stack: ArrayDeque<[ValueRef<'a>; 256]>,
     output: W,
 }
-impl<W> VM<W> {
-    pub fn new(chunk: Chunk, output: W) -> Self {
+impl<'a, W> VM<'a, W> {
+    pub fn new(chunk: &'a Chunk, output: W) -> Self {
         VM {
             chunk,
             output,
@@ -31,7 +34,7 @@ impl<W> VM<W> {
     }
 }
 
-impl<W: Write> VM<W> {
+impl<'a, W: Write> VM<'a, W> {
     pub fn disassemble(&mut self) {
         self.chunk.disassemble(&mut self.output);
     }
@@ -101,10 +104,27 @@ impl<W: Write> VM<W> {
                     }
                 }
                 OP_ADD => {
-                    if let Some(value) = self.binary_op(|a, b| a + b) {
-                        self.push_value(value);
-                    } else {
-                        return Err(InterpretError::RuntimeError);
+                    let b = self.peek(0).ok_or(InterpretError::RuntimeError)?;
+                    let a = self.peek(1).ok_or(InterpretError::RuntimeError)?;
+                    match (b, a) {
+                        (Value::Number(_), Value::Number(_)) => {
+                            let value = self
+                                .binary_op(|a, b| a + b)
+                                .ok_or(InterpretError::RuntimeError)?;
+                            self.push_value(value);
+                        }
+                        (Value::Object(b), Value::Object(a)) => match (&*b, &*a) {
+                            (Obj::String(ref b), Obj::String(ref a)) => {
+                                let mut s: String = (&**a).deref().to_owned();
+                                s.push_str(b);
+                                let obj_s = ObjString::new(s);
+                                let value = Value::Object(Cow::Owned(Obj::String(Box::new(obj_s))));
+
+                                self.push_value(value);
+                            }
+                            _ => return Err(InterpretError::RuntimeError),
+                        },
+                        _ => return Err(InterpretError::RuntimeError),
                     }
                 }
                 OP_SUBTRACT => {
@@ -140,7 +160,7 @@ impl<W: Write> VM<W> {
 
         byte
     }
-    fn read_constant(&mut self) -> Value {
+    fn read_constant(&mut self) -> ValueRef<'a> {
         let constant = self.chunk.read_constant(self.ip);
 
         self.ip += 1;
@@ -148,25 +168,28 @@ impl<W: Write> VM<W> {
         constant
     }
 
-    fn push_value(&mut self, v: Value) {
+    fn push_value(&mut self, v: ValueRef<'a>) {
         // panic on overflow
         self.stack.push_back(v).unwrap();
     }
-    fn pop_value(&mut self) -> Option<Value> {
+    fn pop_value(&mut self) -> Option<ValueRef<'a>> {
         self.stack.pop_back()
     }
-    fn peek(&self, distance: usize) -> Option<&Value> {
+    fn peek(&self, distance: usize) -> Option<ValueRef<'a>> {
         let n = self.stack.len();
         let index = n - 1 - distance;
 
-        self.stack.get(index)
+        self.stack.get(index).map(|c| c.clone())
     }
 
-    fn print_value(&mut self, v: Value) {
+    fn print_value(&mut self, v: ValueRef) {
         write!(self.output, "{}\n", v);
     }
 
-    fn binary_op<F: Fn(Value, Value) -> Option<Value>>(&mut self, f: F) -> Option<Value> {
+    fn binary_op<F>(&mut self, f: F) -> Option<ValueRef<'a>>
+    where
+        F: for<'b> Fn(ValueRef<'b>, ValueRef<'b>) -> Option<ValueRef<'b>>,
+    {
         let a = self.pop_value()?;
         let b = self.pop_value()?;
 

@@ -3,7 +3,7 @@ extern crate arraydeque;
 use std::io::Write;
 
 use common::*;
-use value::Value;
+use value::{ValueOwned, ValueRef};
 
 #[derive(Copy, Clone, Debug)]
 struct Line {
@@ -56,7 +56,7 @@ impl Lines {
 
 pub struct Chunk {
     code: Vec<u8>,
-    constants: Vec<Value>,
+    constants: Vec<ValueOwned>,
     lines: Lines,
 }
 
@@ -72,7 +72,7 @@ impl Chunk {
         self.code.push(byte);
         self.lines.push_line(line);
     }
-    pub fn write_constant(&mut self, constant: Value, line: u64) {
+    pub fn write_constant(&mut self, constant: ValueOwned, line: u64) {
         self.write(OP_CONSTANT, line);
         let constant_offset = self.add_constant(constant);
         self.write(constant_offset as u8, line);
@@ -80,11 +80,11 @@ impl Chunk {
     pub fn read_byte(&self, offset: usize) -> u8 {
         self.code[offset]
     }
-    pub fn read_constant(&self, offset: usize) -> Value {
+    pub fn read_constant(&self, offset: usize) -> ValueRef {
         let constant_offset = self.read_byte(offset);
-        self.constants[constant_offset as usize]
+        (&self.constants[constant_offset as usize]).into()
     }
-    fn add_constant(&mut self, value: Value) -> usize {
+    fn add_constant(&mut self, value: ValueOwned) -> usize {
         self.constants.push(value);
         self.constants.len() - 1
     }

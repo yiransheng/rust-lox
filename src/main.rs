@@ -7,6 +7,7 @@ use std::io::Write;
 mod chunk;
 mod common;
 mod compiler;
+mod object;
 mod scanner;
 mod value;
 mod vm;
@@ -32,12 +33,12 @@ fn main() {
     // vm.disassemble();
     // vm.interpret();
 
-    let s = "!(5 - 4 > 3 * 2 == !nil)";
+    let s = "\"abc\" + \"ddd\" + \" aa\"";
     let result = compile(s, &mut chunk);
 
     match result {
         Ok(_) => {
-            let mut vm = VM::new(chunk, stdout);
+            let mut vm = VM::new(&chunk, stdout);
             vm.disassemble();
             vm.interpret();
         }

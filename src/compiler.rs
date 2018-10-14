@@ -1,8 +1,9 @@
 use chunk::Chunk;
 use common::*;
+use object::*;
 use scanner::{Scanner, Token, TokenType};
 use std::mem;
-use value::Value;
+use value::{Value, ValueOwned};
 
 #[derive(Debug)]
 pub struct CompileError {
@@ -210,6 +211,14 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
         Ok(())
     }
 
+    fn string(&mut self) -> Result<()> {
+        let length = self.previous.raw.len();
+        // remove open close quotes
+        let value = Value::from(self.previous.raw.get(1..length - 1).unwrap());
+        self.emit_constant(value);
+        Ok(())
+    }
+
     #[inline]
     fn consume(&mut self, ty: TokenType) -> Result<()> {
         self._consume(ty, None)
@@ -271,7 +280,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
         self.emit_byte(b1);
         self.emit_byte(b2);
     }
-    fn emit_constant(&mut self, c: Value) {
+    fn emit_constant(&mut self, c: ValueOwned) {
         // Check constants array limit
         self.chunk.write_constant(c, self.previous.line);
     }
@@ -382,7 +391,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
                 precedence: PREC_NONE,
             },
             TokenType::TOKEN_STRING => ParseRule {
-                prefix: None,
+                prefix: Some(Parser::string),
                 infix: None,
                 precedence: PREC_NONE,
             },
