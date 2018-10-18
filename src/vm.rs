@@ -52,7 +52,6 @@ impl<'a, W: Write> VM<'a, W> {
                     if let Some(v) = self.pop_value() {
                         self.print_value(&v);
                     }
-                    return Ok(());
                 }
                 OP_NIL => {
                     self.push_value(Value::Nil);

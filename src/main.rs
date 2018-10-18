@@ -24,7 +24,10 @@ fn main() {
     let stdout = io::stdout();
     let mut chunk = Chunk::new();
 
-    let s = "var y=22; var x = y + 3; print x;";
+    let s = "var y = 22;
+    var x = 10; 
+    x = y * 3 - 2;
+    print x+y;";
     let result = compile(s, &mut chunk);
 
     match result {

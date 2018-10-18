@@ -317,7 +317,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
     fn parse_variable(&mut self, message: &str) -> Result<usize> {
         self.consume_with_error_message(TokenType::TOKEN_IDENTIFIER, message)?;
         let identifier: ValueOwned = Value::from(self.previous.raw);
-        let offset = self.chunk.write_constant(identifier, self.previous.line);
+        let offset = self.chunk.add_constant(identifier);
         Ok(offset)
     }
 
