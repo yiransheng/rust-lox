@@ -49,7 +49,9 @@ impl<'a, W: Write> VM<'a, W> {
             let instr: u8 = self.read_byte();
             match instr {
                 OP_PRINT => {
-                    self.pop_value().map(|v| self.print_value(v));
+                    if let Some(v) = self.pop_value() {
+                        self.print_value(&v);
+                    }
                     return Ok(());
                 }
                 OP_NIL => {
@@ -219,11 +221,11 @@ impl<'a, W: Write> VM<'a, W> {
         let n = self.stack.len();
         let index = n - 1 - distance;
 
-        self.stack.get(index).map(|c| c.clone())
+        self.stack.get(index).cloned()
     }
 
-    fn print_value(&mut self, v: ValueRef) {
-        write!(self.output, "{}\n", v);
+    fn print_value(&mut self, v: &ValueRef) {
+        writeln!(self.output, "{}", v);
     }
 
     fn binary_op<F>(&mut self, f: F) -> Option<ValueRef<'a>>

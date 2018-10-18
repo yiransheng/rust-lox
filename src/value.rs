@@ -57,8 +57,8 @@ impl<O> Value<O> {
     }
     pub fn is_falsy(&self) -> bool {
         match self {
-            &Value::Nil => true,
-            &Value::Bool(false) => true,
+            Value::Nil => true,
+            Value::Bool(false) => true,
             _ => false,
         }
     }

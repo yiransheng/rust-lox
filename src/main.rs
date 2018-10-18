@@ -1,8 +1,9 @@
+#![allow(non_camel_case_types)]
+
 extern crate arraydeque;
 extern crate num;
 
 use std::io;
-use std::io::Write;
 
 mod chunk;
 mod common;
@@ -20,7 +21,7 @@ use scanner::TokenType;
 use vm::VM;
 
 fn main() {
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
     let mut chunk = Chunk::new();
 
     let s = "var y=22; var x = y + 3; print x;";

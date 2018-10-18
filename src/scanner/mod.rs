@@ -77,18 +77,18 @@ impl<'a> Scanner<'a> {
                 }
                 '"' => self
                     .scan_string()
-                    .unwrap_or(self.mk_error_token("Invalid string literal")),
+                    .unwrap_or_else(|| self.mk_error_token("Invalid string literal")),
                 c => {
                     if c.is_digit(10) {
                         self.scan_number()
                     } else if c.is_alphabetic() {
                         self.scan_identifier()
-                            .unwrap_or(self.mk_error_token("Invalid identifier"))
+                            .unwrap_or_else(|| self.mk_error_token("Invalid identifier"))
                     } else {
                         unreachable!()
                     }
                 }
-            }).unwrap_or(self.mk_error_token("Unexpected EOF"))
+            }).unwrap_or_else(|| self.mk_error_token("Unexpected EOF"))
     }
     fn skip_whites(&mut self) {
         loop {
@@ -193,13 +193,9 @@ impl<'a> Scanner<'a> {
     where
         F: Fn(char) -> bool,
     {
-        loop {
-            if let Some(c) = self.peek() {
-                if f(c) {
-                    self.advance();
-                } else {
-                    break;
-                }
+        while let Some(c) = self.peek() {
+            if f(c) {
+                self.advance();
             } else {
                 break;
             }

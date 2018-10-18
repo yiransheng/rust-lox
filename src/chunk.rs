@@ -44,9 +44,9 @@ impl Lines {
             .iter()
             .scan(line_acc, |acc, ref line| {
                 acc.line_no = line.line_no;
-                acc.repeat = acc.repeat + line.repeat;
+                acc.repeat += line.repeat;
 
-                Some(acc.clone())
+                Some(*acc)
             }).skip_while(|line_acc| line_acc.repeat < offset + 1)
             .map(|line_acc| line_acc.line_no)
             .next()
@@ -138,7 +138,7 @@ impl Chunk {
             OP_GREATER => Self::disassemble_simple_instruction("OP_GREATER", offset, write_to),
             OP_LESS => Self::disassemble_simple_instruction("OP_LESS", offset, write_to),
             _ => {
-                write!(write_to, "Unknown OptCode {}\n", instr);
+                writeln!(write_to, "Unknown OptCode {}", instr);
                 offset + 1
             }
         }
@@ -149,7 +149,7 @@ impl Chunk {
         offset: usize,
         write_to: &mut W,
     ) -> usize {
-        write!(write_to, "{}\n", name);
+        writeln!(write_to, "{}", name);
         offset + 1
     }
     fn disassemble_constant_instruct<W: Write>(
@@ -161,7 +161,7 @@ impl Chunk {
         let constant: u8 = self.code[offset + 1];
 
         write!(write_to, "{:<16} {:04} ", name, constant);
-        write!(write_to, "{}\n", self.constants[constant as usize]);
+        writeln!(write_to, "{}", self.constants[constant as usize]);
 
         offset + 2
     }

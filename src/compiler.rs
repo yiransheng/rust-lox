@@ -22,7 +22,7 @@ pub enum CompileErrorPayload {
 pub type Result<T> = ::std::result::Result<T, CompileError>;
 
 pub fn compile<'a>(source: &'a str, chunk: &mut Chunk) -> Result<()> {
-    let mut scanner = Scanner::new(source);
+    let scanner = Scanner::new(source);
     let mut parser = Parser::new(scanner, chunk);
 
     if parser.match_ty(TokenType::TOKEN_EOF) {
@@ -164,11 +164,11 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
         self.parse_precedence(PREC_ASSIGNMENT)
     }
 
-    fn grouping(&mut self, can_assign: bool) -> Result<()> {
+    fn grouping(&mut self, _can_assign: bool) -> Result<()> {
         self.expression()?;
         self.consume_with_error_message(TokenType::TOKEN_RIGHT_PAREN, "expect ) after expression")
     }
-    fn binary(&mut self, can_assign: bool) -> Result<()> {
+    fn binary(&mut self, _can_assign: bool) -> Result<()> {
         let op_type = self.previous.ty;
         let rule = Self::get_rule(op_type);
 
@@ -210,7 +210,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
 
         Ok(())
     }
-    fn unary(&mut self, can_assign: bool) -> Result<()> {
+    fn unary(&mut self, _can_assign: bool) -> Result<()> {
         let op_type = self.previous.ty;
 
         self.parse_precedence(PREC_UNARY)?;
@@ -233,7 +233,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
 
         let ParseRule { prefix, .. } = Self::get_rule(self.previous.ty);
 
-        let prefix: ParseFn<'a, 'b> = prefix.ok_or(self.error("Expect expression"))?;
+        let prefix: ParseFn<'a, 'b> = prefix.ok_or_else(|| self.error("Expect expression"))?;
         let can_assign = precedence <= PREC_ASSIGNMENT;
 
         prefix(self, can_assign)?;
@@ -252,7 +252,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
             Ok(())
         }
     }
-    fn literal(&mut self, can_assign: bool) -> Result<()> {
+    fn literal(&mut self, _can_assign: bool) -> Result<()> {
         match self.previous.ty {
             TokenType::TOKEN_FALSE => {
                 self.emit_byte(OP_FALSE);
@@ -270,7 +270,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
         }
     }
 
-    fn number(&mut self, can_assign: bool) -> Result<()> {
+    fn number(&mut self, _can_assign: bool) -> Result<()> {
         let val: f64 = self
             .previous
             .raw
@@ -281,7 +281,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
         Ok(())
     }
 
-    fn string(&mut self, can_assign: bool) -> Result<()> {
+    fn string(&mut self, _can_assign: bool) -> Result<()> {
         let length = self.previous.raw.len();
         // remove open close quotes
         let value = Value::from(self.previous.raw.get(1..length - 1).unwrap());
@@ -328,8 +328,7 @@ impl<'a, 'b: 'a> Parser<'a, 'b> {
         if !self.check_ty(ty) {
             false
         } else {
-            self.advance();
-            true
+            self.advance().is_ok()
         }
     }
 
