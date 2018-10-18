@@ -50,7 +50,7 @@ pub enum TokenType {
     TOKEN_EOF,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Token<'a> {
     pub ty: TokenType,
     pub raw: &'a str,
@@ -60,5 +60,8 @@ pub struct Token<'a> {
 impl<'a> Token<'a> {
     pub fn new(ty: TokenType, raw: &'a str, line: u64) -> Self {
         Token { ty, raw, line }
+    }
+    pub fn identifier_equal(&self, other: &Token<'a>) -> bool {
+        self.raw == other.raw
     }
 }

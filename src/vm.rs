@@ -48,7 +48,7 @@ impl<'a, W: Write> VM<'a, W> {
         loop {
             let instr: u8 = self.read_byte();
             match instr {
-                OP_RETURN => {
+                OP_PRINT => {
                     self.pop_value().map(|v| self.print_value(v));
                     return Ok(());
                 }

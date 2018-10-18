@@ -72,10 +72,11 @@ impl Chunk {
         self.code.push(byte);
         self.lines.push_line(line);
     }
-    pub fn write_constant(&mut self, constant: ValueOwned, line: u64) {
+    pub fn write_constant(&mut self, constant: ValueOwned, line: u64) -> usize {
         self.write(OP_CONSTANT, line);
         let constant_offset = self.add_constant(constant);
         self.write(constant_offset as u8, line);
+        constant_offset
     }
     pub fn read_byte(&self, offset: usize) -> u8 {
         self.code[offset]
@@ -84,7 +85,7 @@ impl Chunk {
         let constant_offset = self.read_byte(offset);
         (&self.constants[constant_offset as usize]).into()
     }
-    fn add_constant(&mut self, value: ValueOwned) -> usize {
+    pub fn add_constant(&mut self, value: ValueOwned) -> usize {
         self.constants.push(value);
         self.constants.len() - 1
     }
@@ -116,6 +117,13 @@ impl Chunk {
 
         match instr {
             OP_RETURN => Self::disassemble_simple_instruction("OP_RETURN", offset, write_to),
+            OP_PRINT => Self::disassemble_simple_instruction("OP_PRINT", offset, write_to),
+            OP_POP => Self::disassemble_simple_instruction("OP_POP", offset, write_to),
+            OP_DEFINE_GLOBAL => {
+                self.disassemble_constant_instruct("OP_DEFINE_GLOBAL", offset, write_to)
+            }
+            OP_SET_GLOBAL => self.disassemble_constant_instruct("OP_SET_GLOBAL", offset, write_to),
+            OP_GET_GLOBAL => self.disassemble_constant_instruct("OP_GET_GLOBAL", offset, write_to),
             OP_NIL => Self::disassemble_simple_instruction("OP_NIL", offset, write_to),
             OP_TRUE => Self::disassemble_simple_instruction("OP_TRUE", offset, write_to),
             OP_FALSE => Self::disassemble_simple_instruction("OP_FALSE", offset, write_to),
@@ -130,7 +138,7 @@ impl Chunk {
             OP_GREATER => Self::disassemble_simple_instruction("OP_GREATER", offset, write_to),
             OP_LESS => Self::disassemble_simple_instruction("OP_LESS", offset, write_to),
             _ => {
-                write!(write_to, "Unknown OptCode {}", instr);
+                write!(write_to, "Unknown OptCode {}\n", instr);
                 offset + 1
             }
         }

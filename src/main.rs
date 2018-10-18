@@ -23,23 +23,14 @@ fn main() {
     let mut stdout = io::stdout();
     let mut chunk = Chunk::new();
 
-    // chunk.write_constant(1.2, 123);
-    // chunk.write(OP_NEGATE, 123);
-    // chunk.write_constant(1.8, 124);
-    // chunk.write(OP_SUBTRACT, 124);
-    // chunk.write(OP_RETURN, 125);
-
-    // let mut vm = VM::new(chunk, stdout);
-    // vm.disassemble();
-    // vm.interpret();
-
-    let s = "\"abc\" + \"ddd\" + \" aa\"";
+    let s = "var y=22; var x = y + 3; print x;";
     let result = compile(s, &mut chunk);
 
     match result {
         Ok(_) => {
             let mut vm = VM::new(&chunk, stdout);
             vm.disassemble();
+            println!("\n == Program Output == \n");
             vm.interpret();
         }
         Err(e) => println!("{:?}", e),
